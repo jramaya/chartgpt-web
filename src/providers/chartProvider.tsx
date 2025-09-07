@@ -139,7 +139,6 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
     );
     if (isMounted()) {
       setSummary(response.data);
-      setCurrentStep(PipelineStep.COMPLETED);
     }
     return response.data;
   }, [API_BASE_URL, isMounted]);
@@ -152,7 +151,9 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
         data_frame: initialData,
         operations: chartsConfigResult.operations,
       });
-      await generateSummary(statsResult, executedChartsResult);
+      const summaryResult = await generateSummary(statsResult, executedChartsResult);
+      console.log("Summary Result:", summaryResult);
+      await completeStatus();
 
     } catch (err) {
       const error = err as AxiosError;
@@ -203,6 +204,12 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
       }
     }
   }, [API_BASE_URL, isMounted, runAnalysisPipeline]);
+
+  const completeStatus = useCallback(async () => {
+    setCurrentStep(PipelineStep.COMPLETED);
+    setLoading(false);
+    setError(null);
+  }, [API_BASE_URL, isMounted]);
 
   const value: RefineContextType = {
     data,
