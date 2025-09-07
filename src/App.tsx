@@ -23,8 +23,8 @@ import { ConfigProvider, App as AntdApp } from "antd";
 import "@ant-design/v5-patch-for-react-19";
 import "@refinedev/antd/dist/reset.css";
 
-import { PostList, PostCreate, PostEdit, PostShow } from "../src/pages/posts";
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
+import { DashboardPage, UploadPage } from "./pages/dashboard";
 
 const API_URL = "https://api.fake-rest.refine.dev";
 
@@ -40,14 +40,8 @@ const App: React.FC = () => {
               dataProvider={dataProvider(API_URL)}
               resources={[
                 {
-                  name: "posts",
-                  list: "/posts",
-                  show: "/posts/show/:id",
-                  create: "/posts/create",
-                  edit: "/posts/edit/:id",
-                  meta: {
-                    canDelete: true,
-                  },
+                  name: "dashboard",
+                  list: "/dashboard",
                 },
               ]}
               notificationProvider={useNotificationProvider}
@@ -64,13 +58,10 @@ const App: React.FC = () => {
                     </ThemedLayout>
                   }
                 >
-                  <Route index element={<NavigateToResource />} />
-
-                  <Route path="/posts">
-                    <Route index element={<PostList />} />
-                    <Route path="create" element={<PostCreate />} />
-                    <Route path="edit/:id" element={<PostEdit />} />
-                    <Route path="show/:id" element={<PostShow />} />
+                  <Route index element={<NavigateToResource/>} />
+                  <Route path="/dashboard">
+                    <Route index element={<DashboardPage />} />
+                    <Route path="upload" element={<UploadPage />} />
                   </Route>
 
                   <Route path="*" element={<ErrorComponent />} />
