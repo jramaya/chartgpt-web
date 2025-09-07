@@ -97,6 +97,9 @@ export interface ChartAnalytics {
   id: string;
   title: string;
   details: string;
+  chart_type?: string; // comes from buildChart
+  insight?: string; // comes from buildChart
+  chart_configuration?: any; // comes from buildChart
 }
 
 export interface SummaryResponse {

@@ -151,10 +151,35 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
         data_frame: initialData,
         operations: chartsConfigResult.operations,
       });
-      const summaryResult = await generateSummary(statsResult, executedChartsResult);
-      console.log("Summary Result:", summaryResult);
-      await completeStatus(summaryResult);
+      const summaryResult = await generateSummary(
+        statsResult,
+        executedChartsResult
+      );
 
+      // Enrich chart_analytics with data from executedChartsResult
+      const enrichedChartAnalytics = summaryResult.chart_analytics.map(
+        (analytic) => {
+          const correspondingChart = executedChartsResult.executed_charts.find(
+            (chart) => chart.id === analytic.id
+          );
+          if (correspondingChart) {
+            return {
+              ...analytic,
+              insight: correspondingChart.insight,
+              chart_type: correspondingChart.chart_type,
+              chart_configuration: correspondingChart.result,
+            };
+          }
+          return analytic;
+        }
+      );
+
+      const enrichedSummary: SummaryResponse = {
+        ...summaryResult,
+        chart_analytics: enrichedChartAnalytics,
+      };
+
+      await completeStatus(enrichedSummary);
     } catch (err) {
       const error = err as AxiosError;
       const errorMessage =
@@ -210,7 +235,7 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
     setLoading(false);
     setError(null);
     localStorage.setItem("dashboardSummary", JSON.stringify(summaryResult));
-  }, [API_BASE_URL, isMounted]);
+  }, []);
 
   const value: RefineContextType = {
     data,
