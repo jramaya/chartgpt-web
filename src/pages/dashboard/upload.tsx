@@ -13,7 +13,7 @@ const { Title, Paragraph } = Typography;
 const props: UploadProps = {
   name: "file",
   multiple: false,
-  // ¡IMPORTANTE! Reemplaza esta URL con tu endpoint de API real para la subida de archivos.
+  // IMPORTANT! Replace this URL with your actual API endpoint for file uploads.
   action: "https://660d2bd96ddfa2943b33731c.mockapi.io/api/upload",
   beforeUpload: (file) => {
     const allowedTypes = [
@@ -21,19 +21,26 @@ const props: UploadProps = {
       "application/vnd.ms-excel",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ];
-    const isAllowed = allowedTypes.includes(file.type);
-    if (!isAllowed) {
-      message.error(`${file.name} no es un archivo CSV o Excel válido.`);
+    const isAllowedType = allowedTypes.includes(file.type);
+    if (!isAllowedType) {
+      message.error(`${file.name} is not a valid CSV or Excel file.`);
     }
-    // Si el tipo no es permitido, se previene la subida.
+
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error("File must be smaller than 2MB!");
+    }
+
+    const isAllowed = isAllowedType && isLt2M;
+    // If the file is not allowed, prevent upload.
     return isAllowed || Upload.LIST_IGNORE;
   },
   onChange(info) {
     const { status } = info.file;
     if (status === "done") {
-      message.success(`${info.file.name} se ha subido correctamente.`);
+      message.success(`${info.file.name} file uploaded successfully.`);
     } else if (status === "error") {
-      message.error(`La subida de ${info.file.name} ha fallado.`);
+      message.error(`${info.file.name} file upload failed.`);
     }
   },
 };
@@ -41,21 +48,20 @@ const props: UploadProps = {
 export const UploadPage = () => {
   return (
     <Card>
-      <Title level={3}>Subir Archivo</Title>
+      <Title level={3}>Upload File</Title>
       <Paragraph>
-        Por favor, selecciona o arrastra un archivo en formato CSV o Excel para
-        subirlo.
+        Please select or drag a CSV or Excel file to upload it.
       </Paragraph>
       <Dragger {...props}>
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
         </p>
         <p className="ant-upload-text">
-          Haz clic o arrastra un archivo a esta área para subirlo
+          Click or drag file to this area to upload
         </p>
         <p className="ant-upload-hint">
-          Soporte para una única subida. Los archivos que no sean CSV o Excel
-          serán rechazados.
+          Support for a single upload. Files other than CSV or Excel will be
+          rejected. The recommended file size is no more than 2MB.
         </p>
       </Dragger>
     </Card>
