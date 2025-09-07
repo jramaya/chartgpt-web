@@ -1,8 +1,10 @@
 import React, {
   createContext,
   useState,
+  useEffect,
   useCallback,
   ReactNode,
+  useRef,
 } from "react";
 import axios, { AxiosError } from "axios";
 import {
@@ -26,10 +28,6 @@ interface RefineContextType {
   error: string | null;
   currentStep: PipelineStep; // Add currentStep
   uploadFile: (file: File) => Promise<void>;
-  fetchStats: (data: DataFrame) => Promise<void>;
-  fetchChartsConfig: (stats: StatsResponse) => Promise<void>;
-  buildCharts: (data: BuildChartsRequest) => Promise<void>;
-  generateSummary: (charts: BuildChartsResponse) => Promise<void>;
 }
 
 // Create Context
@@ -61,6 +59,117 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
   );
 
   const API_BASE_URL = apiUrl;
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    // El efecto se ejecuta una vez al montar el componente.
+    // La función de limpieza se ejecutará solo cuando el componente se desmonte.
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  const isMounted = useCallback(() => isMountedRef.current, []);
+
+  const fetchStats = useCallback(async (data: DataFrame): Promise<StatsResponse> => {
+    setCurrentStep(PipelineStep.FETCHING_STATS);
+    const response = await axios.post<StatsResponse>(
+      `${API_BASE_URL}/stats`,
+      data,
+      {
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (isMounted()) setStats(response.data);
+    return response.data;
+  }, [API_BASE_URL, isMounted]);
+
+  const fetchChartsConfig = useCallback(
+    async (stats: StatsResponse): Promise<ChartsConfigResponse> => {
+      setCurrentStep(PipelineStep.FETCHING_CHARTS_CONFIG);
+      const response = await axios.post<ChartsConfigResponse>(
+        `${API_BASE_URL}/generate_charts_configurations?charts_backend=echarts`,
+        stats,
+        {
+          headers: {
+            accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (isMounted()) setChartsConfig(response.data);
+      return response.data;
+    },
+    [API_BASE_URL, isMounted]
+  );
+
+  const buildCharts = useCallback(async (request: BuildChartsRequest): Promise<BuildChartsResponse> => {
+    setCurrentStep(PipelineStep.BUILDING_CHARTS);
+    const response = await axios.post<BuildChartsResponse>(
+      `${API_BASE_URL}/build_charts`,
+      request,
+      {
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (isMounted()) setExecutedCharts(response.data);
+    return response.data;
+  }, [API_BASE_URL, isMounted]);
+
+  const generateSummary = useCallback(async (stats: StatsResponse, executedCharts: BuildChartsResponse): Promise<SummaryResponse> => {
+    setCurrentStep(PipelineStep.GENERATING_SUMMARY);
+    const request = {
+      stats: stats,
+      charts_to_summarize: executedCharts,
+    };
+    const response = await axios.post<SummaryResponse>(
+      `${API_BASE_URL}/generate_summary`,
+      request,
+      {
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (isMounted()) {
+      setSummary(response.data);
+      setCurrentStep(PipelineStep.COMPLETED);
+    }
+    return response.data;
+  }, [API_BASE_URL, isMounted]);
+
+  const runAnalysisPipeline = useCallback(async (initialData: DataFrame) => {
+    try {
+      const statsResult = await fetchStats(initialData);
+      const chartsConfigResult = await fetchChartsConfig(statsResult);
+      const executedChartsResult = await buildCharts({
+        data_frame: initialData,
+        operations: chartsConfigResult.operations,
+      });
+      await generateSummary(statsResult, executedChartsResult);
+
+    } catch (err) {
+      const error = err as AxiosError;
+      const errorMessage =
+        (error.response?.data as any)?.detail ||
+        error.message ||
+        "An unknown error occurred in the pipeline.";
+      if (isMounted()) {
+        setError(errorMessage);
+        setCurrentStep(PipelineStep.IDLE);
+      }
+    } finally {
+      if (isMounted()) {
+        setLoading(false);
+      }
+    }
+  }, [fetchStats, fetchChartsConfig, buildCharts, generateSummary, isMounted]);
 
   const uploadFile = useCallback(async (file: File) => {
     setCurrentStep(PipelineStep.UPLOADING_FILE);
@@ -79,127 +188,21 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
           },
         }
       );
-      setData(response.data);
-      await fetchStats(response.data);
+      const newData = response.data;
+      if (isMounted()) {
+        setData(newData);
+      }
+      // Start the rest of the pipeline
+      await runAnalysisPipeline(newData);
     } catch (err) {
       const error = err as AxiosError;
-      setError(error.message || "Failed to upload file");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchStats = useCallback(async (data: DataFrame) => {
-    setCurrentStep(PipelineStep.FETCHING_STATS);
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.post<StatsResponse>(
-        `${API_BASE_URL}/stats`,
-        data,
-        {
-          headers: {
-            accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setStats(response.data);
-      await fetchChartsConfig(response.data);
-    } catch (err) {
-      const error = err as AxiosError;
-      setError(error.message || "Failed to fetch stats");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchChartsConfig = useCallback(
-    async (stats: StatsResponse) => {
-      setCurrentStep(PipelineStep.FETCHING_CHARTS_CONFIG);
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axios.post<ChartsConfigResponse>(
-          `${API_BASE_URL}/generate_charts_configurations?charts_backend=echarts`,
-          stats,
-          {
-            headers: {
-              accept: "application/json",
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        setChartsConfig(response.data);
-        if (data) {
-          await buildCharts({
-            data_frame: data,
-            operations: response.data.operations,
-          });
-        }
-      } catch (err) {
-        const error = err as AxiosError;
-        setError(error.message || "Failed to fetch charts configuration");
-      } finally {
+      if (isMounted()) {
+        setError(error.message || "Failed to upload file");
+        setCurrentStep(PipelineStep.IDLE);
         setLoading(false);
       }
-    },
-    [data]
-  );
-
-  const buildCharts = useCallback(async (request: BuildChartsRequest) => {
-    setCurrentStep(PipelineStep.BUILDING_CHARTS);
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.post<BuildChartsResponse>(
-        `${API_BASE_URL}/build_charts`,
-        request,
-        {
-          headers: {
-            accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setExecutedCharts(response.data);
-      await generateSummary(response.data);
-    } catch (err) {
-      const error = err as AxiosError;
-      setError(error.message || "Failed to build charts");
-    } finally {
-      setLoading(false);
     }
-  }, []);
-
-  const generateSummary = useCallback(async (charts: BuildChartsResponse) => {
-    setCurrentStep(PipelineStep.GENERATING_SUMMARY);
-    setLoading(true);
-    setError(null);
-    try {
-      const request = {
-        stats: stats,
-        charts: charts,
-      };
-      const response = await axios.post<SummaryResponse>(
-        `${API_BASE_URL}/summary`,
-        request,
-        {
-          headers: {
-            accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setSummary(response.data);
-      setCurrentStep(PipelineStep.COMPLETED);
-    } catch (err) {
-      const error = err as AxiosError;
-      setError(error.message || "Failed to generate summary");
-    } finally {
-      setLoading(false);
-    }
-  }, [stats]);
+  }, [API_BASE_URL, isMounted, runAnalysisPipeline]);
 
   const value: RefineContextType = {
     data,
@@ -211,10 +214,6 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
     error,
     currentStep,
     uploadFile,
-    fetchStats,
-    fetchChartsConfig,
-    buildCharts,
-    generateSummary,
   };
 
   return (
