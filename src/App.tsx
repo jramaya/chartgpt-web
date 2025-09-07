@@ -12,7 +12,6 @@ import {
   ErrorComponent,
   RefineThemes,
 } from "@refinedev/antd";
-import dataProvider from "@refinedev/simple-rest";
 import routerProvider, {
   NavigateToResource,
   UnsavedChangesNotifier,
@@ -25,8 +24,8 @@ import "@refinedev/antd/dist/reset.css";
 
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { DashboardPage, UploadPage } from "./pages/dashboard";
+import { RefineProvider } from "./providers/chartProvider";
 
-const API_URL = "https://api.fake-rest.refine.dev";
 
 const App: React.FC = () => {
   return (
@@ -34,43 +33,44 @@ const App: React.FC = () => {
       <BrowserRouter>
         <GitHubBanner />
         <ConfigProvider theme={RefineThemes.Blue}>
-          <AntdApp>
-            <Refine
-              routerProvider={routerProvider}
-              dataProvider={dataProvider(API_URL)}
-              resources={[
-                {
-                  name: "dashboard",
-                  list: "/dashboard",
-                },
-              ]}
-              notificationProvider={useNotificationProvider}
-              options={{
-                syncWithLocation: true,
-                warnWhenUnsavedChanges: true,
-              }}
-            >
-              <Routes>
-                <Route
-                  element={
-                    <ThemedLayout>
-                      <Outlet />
-                    </ThemedLayout>
-                  }
-                >
-                  <Route index element={<NavigateToResource/>} />
-                  <Route path="/dashboard">
-                    <Route index element={<DashboardPage />} />
-                    <Route path="upload" element={<UploadPage />} />
-                  </Route>
+          <RefineProvider apiUrl="http://localhost:8000/api">
+            <AntdApp>
+              <Refine
+                routerProvider={routerProvider}
+                resources={[
+                  {
+                    name: "dashboard",
+                    list: "/dashboard",
+                  },
+                ]}
+                notificationProvider={useNotificationProvider}
+                options={{
+                  syncWithLocation: true,
+                  warnWhenUnsavedChanges: true,
+                }}
+              >
+                <Routes>
+                  <Route
+                    element={
+                      <ThemedLayout>
+                        <Outlet />
+                      </ThemedLayout>
+                    }
+                  >
+                    <Route index element={<NavigateToResource />} />
+                    <Route path="/dashboard">
+                      <Route index element={<DashboardPage />} />
+                      <Route path="upload" element={<UploadPage />} />
+                    </Route>
 
-                  <Route path="*" element={<ErrorComponent />} />
-                </Route>
-              </Routes>
-              <UnsavedChangesNotifier />
-              <DocumentTitleHandler />
-            </Refine>
-          </AntdApp>
+                    <Route path="*" element={<ErrorComponent />} />
+                  </Route>
+                </Routes>
+                <UnsavedChangesNotifier />
+                <DocumentTitleHandler />
+              </Refine>
+            </AntdApp>
+          </RefineProvider>
         </ConfigProvider>
         <DevtoolsPanel />
       </BrowserRouter>
