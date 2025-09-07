@@ -153,7 +153,7 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
       });
       const summaryResult = await generateSummary(statsResult, executedChartsResult);
       console.log("Summary Result:", summaryResult);
-      await completeStatus();
+      await completeStatus(summaryResult);
 
     } catch (err) {
       const error = err as AxiosError;
@@ -172,7 +172,7 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
     }
   }, [fetchStats, fetchChartsConfig, buildCharts, generateSummary, isMounted]);
 
-  const uploadFile = useCallback(async (file: File) => {
+  const uploadFile = useCallback(async (file: File): Promise<void> => {
     setCurrentStep(PipelineStep.UPLOADING_FILE);
     setLoading(true);
     setError(null);
@@ -205,10 +205,11 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
     }
   }, [API_BASE_URL, isMounted, runAnalysisPipeline]);
 
-  const completeStatus = useCallback(async () => {
+  const completeStatus = useCallback(async (summaryResult: SummaryResponse) => {
     setCurrentStep(PipelineStep.COMPLETED);
     setLoading(false);
     setError(null);
+    localStorage.setItem("dashboardSummary", JSON.stringify(summaryResult));
   }, [API_BASE_URL, isMounted]);
 
   const value: RefineContextType = {

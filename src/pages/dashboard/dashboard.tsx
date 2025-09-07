@@ -1,23 +1,33 @@
-import { Card, Typography } from "antd";
+import { Card, Typography, Spin } from "antd";
+import { useGo } from "@refinedev/core";
 import { MarkdownField } from "@refinedev/antd";
+import { useEffect, useState } from "react";
+import { SummaryResponse } from "../../interfaces/chart";
 
 const { Title } = Typography;
 
-const loremIpsum = `
-### Lorem Ipsum
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-*   **Feature 1:** Fast and reliable.
-*   **Feature 2:** Easy to use.
-*   **Feature 3:** Fully customizable.
-`;
-
 export const DashboardPage = () => {
+  const go = useGo();
+  const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const savedSummary = localStorage.getItem("dashboardSummary");
+    if (savedSummary) {
+      setSummary(JSON.parse(savedSummary));
+    } else {
+      go({ to: "/dashboard/upload", type: "replace" });
+    }
+    setLoading(false);
+  }, [go]);
+
+  if (loading || !summary) {
+    return <Spin spinning={true} tip="Loading Dashboard..." />;
+  }
   return (
     <Card>
       <Title level={3}>Dashboard</Title>
-      <MarkdownField value={loremIpsum} />
+      <MarkdownField value={summary.stats_summary} />
     </Card>
   );
 };

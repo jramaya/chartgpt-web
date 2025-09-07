@@ -1,5 +1,6 @@
 import React, { useContext, useEffect } from "react";
 import { InboxOutlined } from "@ant-design/icons";
+import { useGo } from "@refinedev/core";
 import {
   Upload,
   message,
@@ -17,25 +18,24 @@ const { Title, Paragraph } = Typography;
 
 export const UploadPage = () => {
   const context = useContext(RefineContext);
+  const go = useGo();
 
   if (!context) {
     return <Card>Error: Context not found.</Card>;
   }
 
-  const { uploadFile, currentStep, summary, loading, error } = context;
-
-  useEffect(() => {
-    if (summary) {
-      localStorage.setItem("dashboardSummary", JSON.stringify(summary));
-      message.success("Analysis complete and summary saved!");
-    }
-  }, [summary]);
+  const { uploadFile, currentStep, loading, error } = context;
 
   useEffect(() => {
     if (error) {
       message.error(error);
     }
-  }, [error]);
+
+    if (currentStep === PipelineStep.COMPLETED) {
+      message.success("Analysis complete! Redirecting to dashboard...");
+      go({ to: "/dashboard", type: "replace" });
+    }
+  }, [error, currentStep, go]);
 
   const props: UploadProps = {
     name: "file",
