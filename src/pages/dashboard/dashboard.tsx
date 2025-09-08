@@ -52,16 +52,36 @@ export const DashboardPage = () => {
 
       <Title level={4}>Chart Analysis</Title>
       <Row gutter={[16, 16]}>
-        {summary.chart_analytics.map((analytic: ChartAnalytics) => (
-          <Col span={24} key={analytic.id}>
-            <Card>
-              {analytic.chart_configuration && (
-                <ReactECharts option={analytic.chart_configuration} />
-              )}
-              <MarkdownField value={analytic.details} />
-            </Card>
-          </Col>
-        ))}
+        {summary.chart_analytics.map(
+          (analytic: ChartAnalytics, index: number) => {
+            const chartContent = (
+              <Col xs={24} lg={12}>
+                {analytic.chart_configuration && (
+                  <ReactECharts option={analytic.chart_configuration} />
+                )}
+              </Col>
+            );
+
+            const detailsContent = (
+              <Col xs={24} lg={12}>
+                <MarkdownField value={analytic.details} />
+              </Col>
+            );
+
+            return (
+              <Col span={24} key={analytic.id}>
+                <Card>
+                  <Row gutter={[16, 24]}>
+                    <Col span={24}>
+                      <Title level={5}>{analytic.title}</Title>
+                    </Col>
+                    <Col span={24}><Row gutter={[32, 32]} align="middle">{index % 2 === 0 ? [chartContent, detailsContent] : [detailsContent, chartContent]}</Row></Col>
+                  </Row>
+                </Card>
+              </Col>
+            );
+          },
+        )}
       </Row>
     </>
   );
