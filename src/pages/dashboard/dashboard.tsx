@@ -83,21 +83,18 @@ export const DashboardPage = () => {
 
             return (
               <Col span={24} key={analytic.id}>
-                <Card>
-                  <Row gutter={[16, 24]}>
-                    <Col span={24}>
-                      <Title level={5}>{analytic.title}</Title>
-                    </Col>
-                    <Col span={24}>
-                      <Button
-                        onClick={() => handleAddToDashboard(analytic)}
-                        disabled={isChartInDashboard(analytic.id)}
-                      >
-                        {isChartInDashboard(analytic.id) ? "Added to Dashboard" : "Add to Dashboard"}
-                      </Button>
-                    </Col>
-                    <Col span={24}><Row gutter={[32, 32]} align="middle">{index % 2 === 0 ? [chartContent, detailsContent] : [detailsContent, chartContent]}</Row></Col>
-                  </Row>
+                <Card
+                  title={<Title level={5}>{analytic.title}</Title>}
+                  extra={
+                    <Button
+                      onClick={() => handleAddToDashboard(analytic)}
+                      disabled={isChartInDashboard(analytic.id)}
+                    >
+                      {isChartInDashboard(analytic.id) ? "Added to Dashboard" : "Add to Dashboard"}
+                    </Button>
+                  }
+                >
+                  <Row gutter={[32, 32]} align="middle">{index % 2 === 0 ? [chartContent, detailsContent] : [detailsContent, chartContent]}</Row>
                 </Card>
               </Col>
             );
