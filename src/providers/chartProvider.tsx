@@ -28,6 +28,7 @@ interface RefineContextType {
   error: string | null;
   currentStep: PipelineStep; // Add currentStep
   uploadFile: (file: File) => Promise<void>;
+  resetToIdle: () => void;
 }
 
 // Create Context
@@ -237,6 +238,12 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
     localStorage.setItem("dashboardSummary", JSON.stringify(summaryResult));
   }, []);
 
+  const resetToIdle = useCallback(() => {
+    setCurrentStep(PipelineStep.IDLE);
+    setLoading(false);
+    setError(null);
+  }, []);
+
   const value: RefineContextType = {
     data,
     stats,
@@ -247,6 +254,7 @@ export const RefineProvider: React.FC<RefineProviderProps> = ({
     error,
     currentStep,
     uploadFile,
+    resetToIdle,
   };
 
   return (
