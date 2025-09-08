@@ -1,4 +1,4 @@
-import { Card, Typography, Spin, Button, Row, Col } from "antd";
+import { Card, Typography, Spin, Button, Row, Col, Tabs } from "antd";
 import { useGo } from "@refinedev/core";
 import { MarkdownField } from "@refinedev/antd";
 import { useContext, useEffect, useState } from "react";
@@ -35,17 +35,10 @@ export const DashboardPage = () => {
   if (loading || !summary) {
     return <Spin spinning={true} tip="Loading Dashboard..." />;
   }
-  return (
+
+  const overviewContent = (
     <>
-      <Card
-        title={<Title level={3}>Dashboard</Title>}
-        extra={
-          <Button type="primary" onClick={handleStartNewAnalysis}>
-            Start New Analysis
-          </Button>
-        }
-        style={{ marginBottom: "20px" }}
-      >
+      <Card title={<Title level={3}>Dashboard</Title>} style={{ marginBottom: "20px" }}>
         <MarkdownField value={summary.stats_summary} />
       </Card>
 
@@ -88,5 +81,21 @@ export const DashboardPage = () => {
         )}
       </Row>
     </>
+  );
+
+  return (
+    <Tabs
+      defaultActiveKey="overview"
+      tabBarExtraContent={
+        <Button type="primary" onClick={handleStartNewAnalysis}>
+          Start New Analysis
+        </Button>
+      }
+    >
+      <Tabs.TabPane tab="Overview" key="overview">
+        {overviewContent}
+      </Tabs.TabPane>
+      <Tabs.TabPane tab="Dashboard" key="dashboard" />
+    </Tabs>
   );
 };
