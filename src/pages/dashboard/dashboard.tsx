@@ -83,6 +83,16 @@ export const DashboardPage = () => {
     </>
   );
 
+  const dashboardGrid = (
+    <Row gutter={[16, 16]}>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <Col key={index} span={12}>
+          <Card title={`Chart ${index + 1}`} style={{ height: '300px' }} />
+        </Col>
+      ))}
+    </Row>
+  );
+
   return (
     <Tabs
       defaultActiveKey="overview"
@@ -95,7 +105,9 @@ export const DashboardPage = () => {
       <Tabs.TabPane tab="Overview" key="overview">
         {overviewContent}
       </Tabs.TabPane>
-      <Tabs.TabPane tab="Dashboard" key="dashboard" />
+      <Tabs.TabPane tab="Dashboard" key="dashboard">
+        {dashboardGrid}
+      </Tabs.TabPane>
     </Tabs>
   );
 };
