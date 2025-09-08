@@ -1,4 +1,4 @@
-import { Card, Typography, Spin, Button, Row, Col, Tabs } from "antd";
+import { Card, Typography, Spin, Button, Row, Col, Tabs, Empty } from "antd";
 import { useGo } from "@refinedev/core";
 import { MarkdownField } from "@refinedev/antd";
 import { useContext, useEffect, useState } from "react";
@@ -13,6 +13,7 @@ export const DashboardPage = () => {
   const context = useContext(RefineContext);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dashboardCharts, setDashboardCharts] = useState<ChartAnalytics[]>([]);
 
   useEffect(() => {
     const savedSummary = localStorage.getItem("dashboardSummary");
@@ -28,8 +29,23 @@ export const DashboardPage = () => {
     if (context) {
       context.resetToIdle();
     }
+    setDashboardCharts([]);
     localStorage.removeItem("dashboardSummary");
     go({ to: "/dashboard/upload", type: "replace" });
+  };
+
+  const handleAddToDashboard = (chart: ChartAnalytics) => {
+    if (!dashboardCharts.some((c) => c.id === chart.id)) {
+      setDashboardCharts((prev) => [...prev, chart]);
+    }
+  };
+
+  const handleRemoveFromDashboard = (chartId: string) => {
+    setDashboardCharts((prev) => prev.filter((c) => c.id !== chartId));
+  };
+
+  const isChartInDashboard = (chartId: string) => {
+    return dashboardCharts.some((c) => c.id === chartId);
   };
 
   if (loading || !summary) {
@@ -72,6 +88,14 @@ export const DashboardPage = () => {
                     <Col span={24}>
                       <Title level={5}>{analytic.title}</Title>
                     </Col>
+                    <Col span={24}>
+                      <Button
+                        onClick={() => handleAddToDashboard(analytic)}
+                        disabled={isChartInDashboard(analytic.id)}
+                      >
+                        {isChartInDashboard(analytic.id) ? "Added to Dashboard" : "Add to Dashboard"}
+                      </Button>
+                    </Col>
                     <Col span={24}><Row gutter={[32, 32]} align="middle">{index % 2 === 0 ? [chartContent, detailsContent] : [detailsContent, chartContent]}</Row></Col>
                   </Row>
                 </Card>
@@ -84,13 +108,32 @@ export const DashboardPage = () => {
   );
 
   const dashboardGrid = (
-    <Row gutter={[16, 16]}>
-      {Array.from({ length: 6 }).map((_, index) => (
-        <Col key={index} span={12}>
-          <Card title={`Chart ${index + 1}`} style={{ height: '300px' }} />
-        </Col>
-      ))}
-    </Row>
+    <>
+      {dashboardCharts.length > 0 ? (
+        <Row gutter={[16, 16]}>
+          {dashboardCharts.map((chart) => {
+            const chartOptions = {
+              ...chart.chart_configuration,
+              title: {},
+            };
+            return (
+              <Col key={chart.id} xs={24} lg={12}>
+                <Card
+                  title={chart.title}
+                  extra={<Button danger onClick={() => handleRemoveFromDashboard(chart.id)}>Remove</Button>}
+                >
+                  {chart.chart_configuration && (
+                    <ReactECharts option={chartOptions} style={{ height: '300px' }} />
+                  )}
+                </Card>
+              </Col>
+            );
+          })}
+        </Row>
+      ) : (
+        <Empty description="No charts added to the dashboard yet. Add charts from the 'Overview' tab." />
+      )}
+    </>
   );
 
   return (
