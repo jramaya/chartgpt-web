@@ -46,7 +46,6 @@ export const DashboardPage = () => {
         }
         style={{ marginBottom: "20px" }}
       >
-        <Title level={4}>Statistics Summary</Title>
         <MarkdownField value={summary.stats_summary} />
       </Card>
 
@@ -54,10 +53,15 @@ export const DashboardPage = () => {
       <Row gutter={[16, 16]}>
         {summary.chart_analytics.map(
           (analytic: ChartAnalytics, index: number) => {
+            const chartOptions = {
+              ...analytic.chart_configuration,
+              title: {},
+            };
+
             const chartContent = (
               <Col xs={24} lg={12}>
                 {analytic.chart_configuration && (
-                  <ReactECharts option={analytic.chart_configuration} />
+                  <ReactECharts option={chartOptions} />
                 )}
               </Col>
             );
